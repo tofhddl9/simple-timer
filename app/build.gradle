@@ -11,7 +11,7 @@ android {
     compileSdk 31
 
     defaultConfig {
-        applicationId "com.lgtm.default_android_project_template"
+        applicationId "com.lgtm.simple_timer"
         minSdk 23
         targetSdk 31
         versionCode 1

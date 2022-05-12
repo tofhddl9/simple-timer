@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/main_fragment"
-        android:name="com.lgtm.default_Android_Project_Template.MainFragment" >
+        android:name="com.lgtm.simple_timer.MainFragment" >
         <action
             android:id="@+id/action_compass_fragment_to_mapFragment"
             app:destination="@id/subFragment" />
@@ -15,7 +15,7 @@
 
     <fragment
         android:id="@+id/subFragment"
-        android:name="com.lgtm.default_Android_Project_Template.SubFragment"
+        android:name="com.lgtm.simple_timer.SettingFragment"
         tools:layout="@layout/fragment_sub" />
 
 </navigation>
