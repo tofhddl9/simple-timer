@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory
+        android:title="알람">
+
+        <SwitchPreference
+            android:key="start_sound"
+            android:title="사운드 재생"
+            android:summary="0초에 사운드 재생"
+            android:defaultValue="true"/>
+
+        <ListPreference
+            android:key="select_sound"
+            android:title="사운드 선택"
+            android:summary="0초에 울리는 사운드 선택"
+            android:defaultValue="true"/>
+
+        <SwitchPreference
+            android:key="vibrate"
+            android:title="진동 설정"
+            android:summary="0초에 진동 재생"
+            android:defaultValue="true"/>
+
+        <SwitchPreference
+            android:key="sound_infinite"
+            android:title="정지시까지 알람 울리기"
+            android:summary="정지 버튼을 클릭할 때까지 알람 유지하기"
+            android:defaultValue="false"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="에너지">
+
+        <SwitchPreference
+            android:key="display_always"
+            android:title="화면꺼짐 방지"
+            android:summary="시간이 지나 화면이 꺼지는 것을 방지"
+            android:defaultValue="false"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="정보">
+
+        <Preference
+            android:key="build_version"
+            android:title="빌드 버전"
+            android:summary="1.0.0"/>
+    </PreferenceCategory>
+
+</PreferenceScreen>
