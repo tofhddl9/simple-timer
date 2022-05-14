@@ -1,25 +1,40 @@
-package com.lgtm.simple_timer
+package com.lgtm.simple_timer.page.timer
 
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import com.lgtm.simple_timer.databinding.FragmentMainBinding
+import com.lgtm.simple_timer.R
+import com.lgtm.simple_timer.databinding.FragmentTimerBinding
 import com.lgtm.simple_timer.delegate.viewBinding
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
-class MainFragment: Fragment(R.layout.fragment_main) {
+@AndroidEntryPoint
+class TimerFragment: Fragment(R.layout.fragment_timer) {
 
-    private val binding: FragmentMainBinding by viewBinding(FragmentMainBinding::bind)
+    private val binding: FragmentTimerBinding by viewBinding(FragmentTimerBinding::bind)
+
+    private val viewModel : TimerViewModel by viewModels()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         initToolbar()
+
+        setListeners()
+
+        observeViewModel()
     }
 
-    private fun initToolbar() = with(binding) {
-        toolbar.inflateMenu(R.menu.menu_home)
-        toolbar.setOnMenuItemClickListener {
+    private fun initToolbar() = with(binding.toolbar) {
+        inflateMenu(R.menu.menu_home)
+        setOnMenuItemClickListener {
             when (it.itemId) {
                 R.id.menu_setting -> {
                     moveToSetting()
@@ -32,8 +47,24 @@ class MainFragment: Fragment(R.layout.fragment_main) {
         }
     }
 
+    private fun setListeners() {
+
+    }
+
+    private fun observeViewModel() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { uiState ->
+                    // 실제로는 TimerView에 uiState.remainTime 넘겨주기
+
+                    binding.textView.text = uiState.remainTime.toString()
+                }
+            }
+        }
+    }
+
    private fun moveToSetting() {
-        findNavController().navigate(MainFragmentDirections.actionCompassFragmentToMapFragment())
+        findNavController().navigate(TimerFragmentDirections.actionCompassFragmentToMapFragment())
     }
 
 }
@@ -55,7 +86,7 @@ class MainFragment: Fragment(R.layout.fragment_main) {
  *   - remainTimeInSec: Long
  *   - state: State {INIT, PROGRESS, PAUSE, FIN}
  *   - settingTime: Long ... 다시하기 버튼 추가
- * 남은 시간에 따라 결정되는 프로그레스의 진척도, 색상 등은 뷰가 갖되, 델리게이션을 통해 가져볼까
+ * 남은 시간에 따라 결정되는 프로그레스의 진척도, 색상 등은 뷰가 갖되 갈아끼울 수 있게 델리게이션을 통해 가져볼까
  **  - 시간에 따라, 뷰의 모습은 결정적
  *
  * 시나리오
@@ -69,7 +100,5 @@ class MainFragment: Fragment(R.layout.fragment_main) {
      - 타이머는 뷰모델이 갖고? 한 틱마다 uiState를 갱신?
      - 남은 시간이 0초가 되면 state같은것도 갱신하면 되겠다.
      - 뷰는 단지, uiState에 따라 갱신되는데, 이때 델리게이션을 통해 어떻게 그릴지 결정되는 형태.
-
- *
  *
  * */

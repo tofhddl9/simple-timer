@@ -7,11 +7,11 @@
 
     <fragment
         android:id="@+id/main_fragment"
-        android:name="com.lgtm.simple_timer.MainFragment"
-        tools:layout="@layout/fragment_main" >
+        android:name="com.lgtm.simple_timer.page.timer.TimerFragment"
+        tools:layout="@layout/fragment_timer" >
         <action
             android:id="@+id/action_compass_fragment_to_mapFragment"
-            app:destination="@id/subFragment"
+            app:destination="@id/settingFragment"
             app:enterAnim="@anim/slide_in_up"
             app:exitAnim="@anim/slide_out_up"
             app:popEnterAnim="@anim/slide_in_down"
@@ -19,8 +19,7 @@
     </fragment>
 
     <fragment
-        android:id="@+id/subFragment"
-        android:name="com.lgtm.simple_timer.SettingFragment"
-        tools:layout="@layout/fragment_sub" />
+        android:id="@+id/settingFragment"
+        android:name="com.lgtm.simple_timer.page.setting.SettingFragment"/>
 
 </navigation>
