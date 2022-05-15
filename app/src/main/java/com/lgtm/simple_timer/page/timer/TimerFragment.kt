@@ -47,8 +47,10 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
         }
     }
 
-    private fun setListeners() {
-
+    private fun setListeners() = with(binding) {
+        toggleButton.setOnClickListener {
+            viewModel.onEvent(TimerEvent.ClickTimer)
+        }
     }
 
     private fun observeViewModel() {

@@ -5,10 +5,3 @@ data class TimerUiState(
     val remainTime: Long = 600L,
     val state: TimerState = TimerState.Init,
 )
-
-sealed class TimerState {
-    object Init : TimerState()
-    object InProgress : TimerState()
-    object Paused : TimerState()
-    object Finished : TimerState()
-}
