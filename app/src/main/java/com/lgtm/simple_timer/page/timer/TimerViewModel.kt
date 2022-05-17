@@ -28,7 +28,7 @@ class TimerViewModel @Inject constructor() : ViewModel() {
 
         viewModelScope.launch {
             timer.statusFlow.collect { timerState ->
-                _uiState.value = uiState.value.copy(state = timerState)
+                _uiState.value = _uiState.value.copy(state = timerState)
 
                 when(timerState) {
                     is TimerState.Init -> {
@@ -59,22 +59,29 @@ class TimerViewModel @Inject constructor() : ViewModel() {
             TimerEvent.TouchRelease -> {
 
             }
-            TimerEvent.ClickTimer -> {
-                if (_uiState.value.state == TimerState.Running) {
-                    viewModelScope.launch {
-                        timer.pause()
-                    }
-                }
-                else {
-                    viewModelScope.launch {
-                        timer.remainTimeFlow()
-                            .onEach { _uiState.value = _uiState.value.copy(remainTime = it) }
-                            .collect()
-                    }
-                    viewModelScope.launch {
-                        timer.start()
-                    }
-                }
+            TimerEvent.ClickStartOrPause -> {
+                onClickTimerToggleButton()
+            }
+            TimerEvent.ClickReset -> {
+
+            }
+        }
+    }
+
+    private fun onClickTimerToggleButton() {
+        if (_uiState.value.state == TimerState.Running) {
+            viewModelScope.launch {
+                timer.pause()
+            }
+        }
+        else {
+            viewModelScope.launch {
+                timer.remainTimeFlow()
+                    .onEach { _uiState.value = _uiState.value.copy(remainTime = it) }
+                    .collect()
+            }
+            viewModelScope.launch {
+                timer.start()
             }
         }
     }

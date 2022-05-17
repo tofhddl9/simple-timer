@@ -3,11 +3,9 @@ package com.lgtm.simple_timer.page.timer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.consumeAsFlow
@@ -16,8 +14,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class Timer(
-    private val startTime: Long = 30_000,
-    private val period: Long = 1_000,
+    private var startTime: Long = 30_000,
+    private var period: Long = 1_000,
     private val scope: CoroutineScope = CoroutineScope(Job()),
 ) {
 
@@ -66,6 +64,7 @@ class Timer(
             remainTime -= delay
             operationChannel.send(Operation.EMIT)
         }
+        remainTime = remainTime.coerceAtLeast(0)
         operationChannel.send(Operation.FINISH)
     }
 
@@ -81,6 +80,12 @@ class Timer(
         operationChannel.send(Operation.RESET)
     }
 
+    fun configure(startTime: Long, period: Long) {
+        // if (_statusFlow.value == TimerState.Init)
+        this.startTime = startTime
+        this.remainTime = startTime
+        this.period = period
+    }
 }
 
 private enum class Operation {

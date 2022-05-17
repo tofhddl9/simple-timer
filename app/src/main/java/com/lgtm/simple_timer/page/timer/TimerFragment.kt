@@ -1,6 +1,11 @@
 package com.lgtm.simple_timer.page.timer
 
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -12,7 +17,9 @@ import com.lgtm.simple_timer.R
 import com.lgtm.simple_timer.databinding.FragmentTimerBinding
 import com.lgtm.simple_timer.delegate.viewBinding
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.*
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -25,11 +32,16 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        initToolbar()
+        initViews()
 
         setListeners()
 
         observeViewModel()
+    }
+
+    private fun initViews() {
+        initToolbar()
+        initProgressBar()
     }
 
     private fun initToolbar() = with(binding.toolbar) {
@@ -47,9 +59,13 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
         }
     }
 
+    private fun initProgressBar() {
+
+    }
+
     private fun setListeners() = with(binding) {
         toggleButton.setOnClickListener {
-            viewModel.onEvent(TimerEvent.ClickTimer)
+            viewModel.onEvent(TimerEvent.ClickStartOrPause)
         }
     }
 
@@ -58,8 +74,17 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { uiState ->
                     // 실제로는 TimerView에 uiState.remainTime 넘겨주기
-
                     binding.textView.text = uiState.remainTime.toString()
+                }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.distinctUntilChanged { old, new ->
+                    old.state == new.state
+                }.collect { uiState ->
+                    controlAlarmManager(uiState.state, uiState.remainTime)
                 }
             }
         }
@@ -67,6 +92,28 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
 
    private fun moveToSetting() {
         findNavController().navigate(TimerFragmentDirections.actionCompassFragmentToMapFragment())
+    }
+
+    private fun controlAlarmManager(timerState: TimerState, remainTime: Long) {
+        if (timerState is TimerState.Running) {
+            val context = requireContext()
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val intent = Intent(context, AlarmReceiver::class.java)
+            val pendingIntent = PendingIntent.getBroadcast(context, 100, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+
+            Log.d("Doran", "$remainTime")
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                Calendar.getInstance().timeInMillis + remainTime,
+                pendingIntent
+            )
+        }
+
+        if (timerState is TimerState.Paused) {
+            val intent = Intent(context, AlarmReceiver::class.java)
+            val pendingIntent = PendingIntent.getBroadcast(requireContext(), 100, intent, PendingIntent.FLAG_NO_CREATE)
+            pendingIntent.cancel()
+        }
     }
 
 }
