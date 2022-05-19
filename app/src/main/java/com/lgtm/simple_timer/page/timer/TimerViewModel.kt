@@ -50,19 +50,13 @@ class TimerViewModel @Inject constructor() : ViewModel() {
 
     fun onEvent(event: TimerEvent) {
         when (event) {
-            TimerEvent.TouchStart -> {
+            is TimerEvent.DialChanged -> {
 
             }
-            TimerEvent.TouchMove -> {
-
-            }
-            TimerEvent.TouchRelease -> {
-
-            }
-            TimerEvent.ClickStartOrPause -> {
+            is TimerEvent.ClickStartOrPause -> {
                 onClickTimerToggleButton()
             }
-            TimerEvent.ClickReset -> {
+            is TimerEvent.ClickReset -> {
 
             }
         }

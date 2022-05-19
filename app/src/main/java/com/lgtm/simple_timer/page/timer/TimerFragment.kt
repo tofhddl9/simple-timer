@@ -59,8 +59,13 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
         }
     }
 
-    private fun initProgressBar() {
+    private fun initProgressBar() = with(binding) {
+        progressBarTimer.remainTime
+        progressBarTimer.setTimerTouchListener(::onDialTouched)
+    }
 
+    private fun onDialTouched(remainTime: Long) {
+        viewModel.onEvent(TimerEvent.DialChanged(remainTime))
     }
 
     private fun setListeners() = with(binding) {
