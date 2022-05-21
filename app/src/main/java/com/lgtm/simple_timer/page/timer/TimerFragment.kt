@@ -80,6 +80,7 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
                 viewModel.uiState.collect { uiState ->
                     // 실제로는 TimerView에 uiState.remainTime 넘겨주기
                     binding.textView.text = uiState.remainTime.toString()
+                    binding.progressBarTimer.remainTime = uiState.remainTime
                 }
             }
         }

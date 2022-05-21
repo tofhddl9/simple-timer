@@ -16,6 +16,9 @@ interface ProgressBarConfig {
     val backgroundProgressBarColor: Int
 }
 
+// timerTickInfo는 타이머나 뷰모델이 갖는게 낫지 않을까?
+// remainTime에 따른 progress, angle 계산을 뷰모델이 하고,
+// progressbar는 계산된 angle에 따라 progress 를 그리기만 하고
 class DefaultProgressBarConfig : ProgressBarConfig {
     override val maxProgressStep: Int by lazy { timerTickInfo.getTotalTimerTick() }
     override val dialSensitivity: Float = 0.03f

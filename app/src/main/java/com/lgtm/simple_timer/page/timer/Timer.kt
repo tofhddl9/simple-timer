@@ -80,11 +80,15 @@ class Timer(
         operationChannel.send(Operation.RESET)
     }
 
-    fun configure(startTime: Long, period: Long) {
+    fun configure(startTime: Long? = null, period: Long? = null) {
         // if (_statusFlow.value == TimerState.Init)
-        this.startTime = startTime
-        this.remainTime = startTime
-        this.period = period
+        startTime?.let {
+            this.startTime = it
+            this.remainTime = it
+        }
+        period?.let {
+            this.period = it
+        }
     }
 }
 

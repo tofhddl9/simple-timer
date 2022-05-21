@@ -24,6 +24,7 @@ import kotlin.math.roundToInt
 // Vm의 Timer 값 변경 : remainTime에 따라 Progress 변경?
 
 // 둘이 바라보는게 다르면 이상하지 않나... 싱크하기 어렵고.
+// 서큘러 갱신이 생길 것 같다.
 
 class CircleProgressBarTimerView @JvmOverloads constructor(
     context: Context,
@@ -33,9 +34,12 @@ class CircleProgressBarTimerView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleInt), ProgressBarConfig by progressBarConfig {
 
     var remainTime: Long = 0
-    private val remainTimeInStringFormat: () -> String = {
-        "${(remainTime/60).toString().padStart(2, '0')}:${(remainTime%60).toString().padStart(2, '0')}"
-    }
+        set(value) {
+            field = value
+            // 여기서 서큘러 갱신 존재. 주석처리하면 타이머 시작시 프로그레스 갱신은 안됨 리팩토링 하자.
+            // progressStep = progressBarConfig.timerTickInfo.getRemainStep(value).toFloat()
+            invalidate()
+        }
 
     private val rect = RectF()
 
@@ -112,9 +116,11 @@ class CircleProgressBarTimerView @JvmOverloads constructor(
 
     private fun onDialTouched(touchedX: Float, touchedY: Float, dx: Float, dy: Float) {
         adjustProgress(touchedX, touchedY, dx, dy)
+        timerTouchListener?.onDialChanged(remainTime)
         invalidate()
     }
 
+    // 이것도 이벤트로 전달.
     private fun adjustProgress(touchedX: Float, touchedY: Float, dx: Float, dy: Float) {
         val touchedQuadrantArea = getQuadrantAreaOfTouch(width, height, touchedX, touchedY)
         val dragDirection = touchDirectionCalculator.getDragDirection(dx, dy)
@@ -219,8 +225,7 @@ class CircleProgressBarTimerView @JvmOverloads constructor(
         val xPos = width / 2f
         val yPos = (height / 2f - (remainTimePaint.descent() + remainTimePaint.ascent()) / 2)
 
-
-        val text = remainTimeInStringFormat.invoke()
+        val text = remainTime.toTimerFormat()
         Log.d("Doran", "remainTime in String: ${text}")
         drawText(text, xPos, yPos, remainTimePaint)
     }
@@ -257,14 +262,41 @@ data class TimerTickInfo(
                 targetStep -= totalStep
             } else {
                 remainTime = (it.from + it.interval * targetStep).toLong()
-                return remainTime
+                return remainTime.toMs()
             }
         }
 
-        return remainTime
+        return remainTime.toMs()
+    }
+
+    fun getRemainStep(remainTime: Long): Int {
+        var remainStep = 0
+        var targetRemainTime = remainTime
+        tickInfoList.forEach {
+            val totalTime = it.to - it.from
+            if (totalTime < targetRemainTime) {
+                targetRemainTime -= totalTime
+                remainStep += totalTime / it.interval
+            } else {
+                remainStep += ceil(1.0f * targetRemainTime / it.interval).toInt()
+                return remainStep
+            }
+        }
+
+        return remainStep
     }
 }
 
 fun interface TimerTouchListener {
     fun onDialChanged(remainTime: Long)
+}
+
+fun Long.toMs() = this * 1_000L
+
+fun Long.toTimerFormat(): String {
+    val remainSec = this / 1_000L
+    val minute = remainSec / 60
+    val sec = remainSec % 60
+
+    return "${minute.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}"
 }

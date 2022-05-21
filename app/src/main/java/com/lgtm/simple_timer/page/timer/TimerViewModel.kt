@@ -1,5 +1,6 @@
 package com.lgtm.simple_timer.page.timer
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -51,7 +52,8 @@ class TimerViewModel @Inject constructor() : ViewModel() {
     fun onEvent(event: TimerEvent) {
         when (event) {
             is TimerEvent.DialChanged -> {
-
+                timer.configure(startTime = event.remainTime)
+                _uiState.value = _uiState.value.copy(remainTime = event.remainTime)
             }
             is TimerEvent.ClickStartOrPause -> {
                 onClickTimerToggleButton()
@@ -71,7 +73,10 @@ class TimerViewModel @Inject constructor() : ViewModel() {
         else {
             viewModelScope.launch {
                 timer.remainTimeFlow()
-                    .onEach { _uiState.value = _uiState.value.copy(remainTime = it) }
+                    .onEach {
+                        Log.d("Doran", "remainTimeFlow : $it")
+                        _uiState.value = _uiState.value.copy(remainTime = it)
+                    }
                     .collect()
             }
             viewModelScope.launch {
