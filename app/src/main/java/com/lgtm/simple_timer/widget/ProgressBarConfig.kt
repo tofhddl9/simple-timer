@@ -7,7 +7,7 @@ interface ProgressBarConfig {
     val maxProgressStep: Int
     val dialSensitivity: Float
     val progressAnimator: ValueAnimator?
-    val timerTickInfo: TimerTickInfo
+    val dialTickInfo: DialTickInfo
 
     val progressBarWidth: Float
     val progressBarColor: Int
@@ -20,12 +20,12 @@ interface ProgressBarConfig {
 // remainTime에 따른 progress, angle 계산을 뷰모델이 하고,
 // progressbar는 계산된 angle에 따라 progress 를 그리기만 하고
 class DefaultProgressBarConfig : ProgressBarConfig {
-    override val maxProgressStep: Int by lazy { timerTickInfo.getTotalTimerTick() }
+    override val maxProgressStep: Int by lazy { dialTickInfo.getTotalTimerTick() }
     override val dialSensitivity: Float = 0.03f
     override val progressAnimator: ValueAnimator?
         get() = null
-    override val timerTickInfo: TimerTickInfo
-        get() = TimerTickInfo(listOf(
+    override val dialTickInfo: DialTickInfo
+        get() = DialTickInfo(listOf(
             TickInfo(0, 60, 5),
             TickInfo(60, 300, 10),
             TickInfo(300, 900, 30),

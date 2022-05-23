@@ -64,8 +64,8 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
         progressBarTimer.setTimerTouchListener(::onDialTouched)
     }
 
-    private fun onDialTouched(remainTime: Long) {
-        viewModel.onEvent(TimerEvent.DialChanged(remainTime))
+    private fun onDialTouched(dialTouchInfo: DialTouchInfo) {
+        viewModel.onEvent(TimerEvent.TouchDial(dialTouchInfo))
     }
 
     private fun setListeners() = with(binding) {
@@ -80,7 +80,8 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
                 viewModel.uiState.collect { uiState ->
                     // 실제로는 TimerView에 uiState.remainTime 넘겨주기
                     binding.textView.text = uiState.remainTime.toString()
-                    binding.progressBarTimer.remainTime = uiState.remainTime
+                    binding.progressBarTimer.progressStep = uiState.progress
+                    // binding.progressBarTimer.remainTime = uiState.remainTime
                 }
             }
         }
@@ -134,26 +135,3 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
 //    - AlarmManager 만들기
 // M1 : 프로그레스바 붙이기
 //    - 뷰 스펙부터 잘 짜고 코드 작업 시작하자.
-
-
-/**
- * uiState
- *   - remainTimeInSec: Long
- *   - state: State {INIT, PROGRESS, PAUSE, FIN}
- *   - settingTime: Long ... 다시하기 버튼 추가
- * 남은 시간에 따라 결정되는 프로그레스의 진척도, 색상 등은 뷰가 갖되 갈아끼울 수 있게 델리게이션을 통해 가져볼까
- **  - 시간에 따라, 뷰의 모습은 결정적
- *
- * 시나리오
- * 1. 뷰의 여러가지 이벤트를 프레그먼트가 콜백으로 받아서 ViewModel에 Event 로 전달
- *   - 터치가 시작되는 이벤트
-     - 터치가 이어지는 이벤트
-     - 터치를 놓아서 결정된 이벤트
-     - 시작 버튼 클릭
-     - 리셋 버튼 클릭
-   2. 알람이 시작되면 1초마다 1틱을 발생시켜 uiState를 갱신.
-     - 타이머는 뷰모델이 갖고? 한 틱마다 uiState를 갱신?
-     - 남은 시간이 0초가 되면 state같은것도 갱신하면 되겠다.
-     - 뷰는 단지, uiState에 따라 갱신되는데, 이때 델리게이션을 통해 어떻게 그릴지 결정되는 형태.
- *
- * */

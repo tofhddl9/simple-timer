@@ -23,7 +23,8 @@ class Timer(
 
     private var job: Job? = null
 
-    private var remainTime = startTime
+    private var _remainTime = startTime
+    val remainTime = _remainTime
 
     // 이렇게 하거나 onStart, onPause 등을 제공하던가
     private val _statusFlow = MutableStateFlow<TimerState>(TimerState.Init)
@@ -43,28 +44,28 @@ class Timer(
                 }
                 Operation.RESET -> {
                     job?.cancel()
-                    remainTime = startTime
+                    _remainTime = startTime
                     _statusFlow.value = TimerState.Init
                 }
                 Operation.FINISH -> {
                     job?.cancel()
-                    remainTime = startTime
+                    _remainTime = startTime
                     _statusFlow.value = TimerState.Finished
                 }
                 Operation.EMIT -> {
-                    emit(remainTime)
+                    emit(_remainTime)
                 }
             }
         }
     }
 
     private suspend fun startTimer(delay: Long) = withContext(Dispatchers.IO) {
-        while (remainTime > 0) {
+        while (_remainTime > 0) {
             delay(delay)
-            remainTime -= delay
+            _remainTime -= delay
             operationChannel.send(Operation.EMIT)
         }
-        remainTime = remainTime.coerceAtLeast(0)
+        _remainTime = remainTime.coerceAtLeast(0)
         operationChannel.send(Operation.FINISH)
     }
 
@@ -84,7 +85,7 @@ class Timer(
         // if (_statusFlow.value == TimerState.Init)
         startTime?.let {
             this.startTime = it
-            this.remainTime = it
+            this._remainTime = it
         }
         period?.let {
             this.period = it

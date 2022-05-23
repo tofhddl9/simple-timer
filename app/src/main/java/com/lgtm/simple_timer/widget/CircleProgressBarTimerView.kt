@@ -7,24 +7,14 @@ import android.view.MotionEvent
 import android.view.View
 import android.graphics.RectF
 import android.util.Log
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MediatorLiveData
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.*
+import com.lgtm.simple_timer.page.timer.DialTouchInfo
+import com.lgtm.simple_timer.page.timer.TimerViewModel
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 import kotlin.math.ceil
 import kotlin.math.roundToInt
-
-// before start case
-// ProgressBar 의 Dial 조절 : Progress에 따라 remainTime 변경 후 vm과 싱크
-
-// after start case
-// Vm의 Timer 값 변경 : remainTime에 따라 Progress 변경?
-
-// 둘이 바라보는게 다르면 이상하지 않나... 싱크하기 어렵고.
-// 서큘러 갱신이 생길 것 같다.
 
 class CircleProgressBarTimerView @JvmOverloads constructor(
     context: Context,
@@ -32,6 +22,8 @@ class CircleProgressBarTimerView @JvmOverloads constructor(
     defStyleInt: Int = 0,
     private val progressBarConfig: ProgressBarConfig = DefaultProgressBarConfig()
 ) : View(context, attrs, defStyleInt), ProgressBarConfig by progressBarConfig {
+
+    private val rect = RectF()
 
     var remainTime: Long = 0
         set(value) {
@@ -41,24 +33,17 @@ class CircleProgressBarTimerView @JvmOverloads constructor(
             invalidate()
         }
 
-    private val rect = RectF()
-
-    private var previousTouchedX: Float = 0f
-    private var previousTouchedY: Float = 0f
-
-    private val touchDirectionCalculator = TouchDirectionCalculator()
-
-    private var progressStep: Float = 0.0f
+    var progressStep: Int = 0
         set(value) {
             if (value >= 0 && value <= progressBarConfig.maxProgressStep) {
                 field = value
-                adjustRemainTime(value.roundToInt())
+                invalidate()
             }
         }
 
     private val angle: Float
         get() {
-            val gaugeTick = progressStep.roundToInt()
+            val gaugeTick = progressStep
             return ceil(360f / progressBarConfig.maxProgressStep * gaugeTick)
         }
 
@@ -84,16 +69,26 @@ class CircleProgressBarTimerView @JvmOverloads constructor(
     }
 
     private var timerTouchListener: TimerTouchListener? = null
-
     fun setTimerTouchListener(listener: TimerTouchListener) {
         timerTouchListener = listener
     }
 
-    private fun adjustRemainTime(progressStep: Int) {
-        val timerTickInfo = progressBarConfig.timerTickInfo
-        Log.d("Doran", "step : ${progressStep}")
-        remainTime = timerTickInfo.getRemainTime(progressStep)
-        Log.d("Doran", "remainTime : ${remainTime}")
+    private var previousTouchedX: Float = 0f
+    private var previousTouchedY: Float = 0f
+
+    private val viewModel: TimerViewModel by lazy {
+        ViewModelProvider(findViewTreeViewModelStoreOwner()!!).get(TimerViewModel::class.java)
+    }
+
+    init {
+        val viewTreeLifecycleOwner = findViewTreeLifecycleOwner()
+        viewTreeLifecycleOwner?.lifecycleScope?.launch {
+            viewTreeLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { uiState ->
+                    remainTime = uiState.remainTime
+                }
+            }
+        }
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -115,76 +110,75 @@ class CircleProgressBarTimerView @JvmOverloads constructor(
     }
 
     private fun onDialTouched(touchedX: Float, touchedY: Float, dx: Float, dy: Float) {
-        adjustProgress(touchedX, touchedY, dx, dy)
-        timerTouchListener?.onDialChanged(remainTime)
-        invalidate()
+        val dialTouchInfo = DialTouchInfo(width, height, touchedX, touchedY, dx, dy)
+        timerTouchListener?.onDialTouched(dialTouchInfo)
     }
 
-    // 이것도 이벤트로 전달.
-    private fun adjustProgress(touchedX: Float, touchedY: Float, dx: Float, dy: Float) {
-        val touchedQuadrantArea = getQuadrantAreaOfTouch(width, height, touchedX, touchedY)
-        val dragDirection = touchDirectionCalculator.getDragDirection(dx, dy)
-        val dragLength = (dx.absoluteValue + dy.absoluteValue) * progressBarConfig.dialSensitivity
-
-        // TODO. refactor
-        when (touchedQuadrantArea) {
-            QuadrantArea.First -> {
-                if (touchDirectionCalculator.isDirectBottomAndRight(dragDirection)) {
-                    increaseProgress(dragLength)
-                } else if (touchDirectionCalculator.isDirectTopAndLeft(dragDirection)) {
-                    decreaseProgress(dragLength)
-                }
-            }
-            QuadrantArea.Second -> {
-                if (touchDirectionCalculator.isDirectTopAndRight(dragDirection)) {
-                    increaseProgress(dragLength)
-                } else if (touchDirectionCalculator.isDirectBottomAndLeft(dragDirection)) {
-                    decreaseProgress(dragLength)
-                }
-            }
-            QuadrantArea.Third -> {
-                if (touchDirectionCalculator.isDirectTopAndLeft(dragDirection)) {
-                    increaseProgress(dragLength)
-                } else if (touchDirectionCalculator.isDirectBottomAndRight(dragDirection)) {
-                    decreaseProgress(dragLength)
-                }
-            }
-            QuadrantArea.Fourth -> {
-                if (touchDirectionCalculator.isDirectBottomAndLeft(dragDirection)) {
-                    increaseProgress(dragLength)
-                } else if (touchDirectionCalculator.isDirectTopAndRight(dragDirection)) {
-                    decreaseProgress(dragLength)
-                }
-            }
-        }
-    }
-
-    private fun increaseProgress(dragLength: Float) {
-        progressStep += dragLength
-    }
-
-    private fun decreaseProgress(dragLength: Float) {
-        progressStep -= dragLength
-    }
-
-    private fun getQuadrantAreaOfTouch(w: Int, h: Int, touchedX: Float, touchedY: Float): QuadrantArea {
-        val centerX = w / 2
-        val centerY = h / 2
-
-        return if (touchedX < centerX) {
-            if (touchedY < centerY) {
-                QuadrantArea.Second
-            } else {
-                QuadrantArea.Third
-            }
-        } else {
-            if (touchedY < centerY) {
-                QuadrantArea.First
-            } else {
-                QuadrantArea.Fourth
-            }
-        }
-    }
+//    // 이것도 이벤트로 전달.
+//    private fun adjustProgress(touchedX: Float, touchedY: Float, dx: Float, dy: Float) {
+//        val touchedQuadrantArea = getQuadrantAreaOfTouch(width, height, touchedX, touchedY)
+//        val dragDirection = touchDirectionCalculator.getDragDirection(dx, dy)
+//        val dragLength = (dx.absoluteValue + dy.absoluteValue) * progressBarConfig.dialSensitivity
+//
+//        // TODO. refactor
+//        when (touchedQuadrantArea) {
+//            QuadrantArea.First -> {
+//                if (touchDirectionCalculator.isDirectBottomAndRight(dragDirection)) {
+//                    increaseProgress(dragLength)
+//                } else if (touchDirectionCalculator.isDirectTopAndLeft(dragDirection)) {
+//                    decreaseProgress(dragLength)
+//                }
+//            }
+//            QuadrantArea.Second -> {
+//                if (touchDirectionCalculator.isDirectTopAndRight(dragDirection)) {
+//                    increaseProgress(dragLength)
+//                } else if (touchDirectionCalculator.isDirectBottomAndLeft(dragDirection)) {
+//                    decreaseProgress(dragLength)
+//                }
+//            }
+//            QuadrantArea.Third -> {
+//                if (touchDirectionCalculator.isDirectTopAndLeft(dragDirection)) {
+//                    increaseProgress(dragLength)
+//                } else if (touchDirectionCalculator.isDirectBottomAndRight(dragDirection)) {
+//                    decreaseProgress(dragLength)
+//                }
+//            }
+//            QuadrantArea.Fourth -> {
+//                if (touchDirectionCalculator.isDirectBottomAndLeft(dragDirection)) {
+//                    increaseProgress(dragLength)
+//                } else if (touchDirectionCalculator.isDirectTopAndRight(dragDirection)) {
+//                    decreaseProgress(dragLength)
+//                }
+//            }
+//        }
+//    }
+//
+//    private fun increaseProgress(dragLength: Float) {
+//        progressStep += dragLength
+//    }
+//
+//    private fun decreaseProgress(dragLength: Float) {
+//        progressStep -= dragLength
+//    }
+//
+//    private fun getQuadrantAreaOfTouch(w: Int, h: Int, touchedX: Float, touchedY: Float): QuadrantArea {
+//        val centerX = w / 2
+//        val centerY = h / 2
+//
+//        return if (touchedX < centerX) {
+//            if (touchedY < centerY) {
+//                QuadrantArea.Second
+//            } else {
+//                QuadrantArea.Third
+//            }
+//        } else {
+//            if (touchedY < centerY) {
+//                QuadrantArea.First
+//            } else {
+//                QuadrantArea.Fourth
+//            }
+//        }
+//    }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
@@ -242,7 +236,7 @@ data class TickInfo(
     val interval: Int
 )
 
-data class TimerTickInfo(
+data class DialTickInfo(
     val tickInfoList: List<TickInfo>
 ) {
     fun getTotalTimerTick(): Int {
@@ -288,7 +282,9 @@ data class TimerTickInfo(
 }
 
 fun interface TimerTouchListener {
-    fun onDialChanged(remainTime: Long)
+    fun onDialTouched(
+        dialTouchInfo: DialTouchInfo
+    )
 }
 
 fun Long.toMs() = this * 1_000L

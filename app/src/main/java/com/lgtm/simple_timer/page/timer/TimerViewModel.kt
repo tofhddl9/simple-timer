@@ -3,6 +3,7 @@ package com.lgtm.simple_timer.page.timer
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lgtm.simple_timer.widget.DefaultProgressBarConfig
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,9 +20,19 @@ class TimerViewModel @Inject constructor() : ViewModel() {
     val uiState: StateFlow<TimerUiState> = _uiState.asStateFlow()
 
     lateinit var timer : Timer
+    lateinit var dialProgressCalculator: DialProgressCalculator
 
     init {
         initTimer()
+        initDialProgressCalculator()
+    }
+
+    private fun initDialProgressCalculator() {
+        val config = DefaultProgressBarConfig()
+        val calculator = TouchDirectionCalculator()
+        val dialTouchInfoProcessor = DialTouchInfoProcessor(config.dialTickInfo, calculator)
+
+        dialProgressCalculator = DialProgressCalculator(dialTouchInfoProcessor)
     }
 
     private fun initTimer() {
@@ -51,9 +62,11 @@ class TimerViewModel @Inject constructor() : ViewModel() {
 
     fun onEvent(event: TimerEvent) {
         when (event) {
-            is TimerEvent.DialChanged -> {
-                timer.configure(startTime = event.remainTime)
-                _uiState.value = _uiState.value.copy(remainTime = event.remainTime)
+            is TimerEvent.TouchDial -> {
+                // timer.configure(startTime = event.dialTouchInfo)
+                //_uiState.value = _uiState.value.copy(remainTime = event.dialTouchInfo)
+                // 터치 이벤트 계산해서 progress, remainTime을 계산
+                onDialTouched(event.dialTouchInfo)
             }
             is TimerEvent.ClickStartOrPause -> {
                 onClickTimerToggleButton()
@@ -62,6 +75,17 @@ class TimerViewModel @Inject constructor() : ViewModel() {
 
             }
         }
+    }
+
+    // remainTime 데이터의 소스는 타이머로부터 갖고오는게 가장 좋을 것 같다.
+    private fun onDialTouched(dialTouchInfo: DialTouchInfo) {
+        // 계산기는 터치된 정보를 바탕으로, 어느방향으로 얼만큼 이동해야 하는지를 계산하고 리턴.
+
+        val progressChange = dialProgressCalculator.calculateProgressByTouch(dialTouchInfo)
+        _uiState.value = _uiState.value.copy(
+            remainTime = timer.remainTime,
+            progress = _uiState.value.progress + progressChange.toInt()
+        )
     }
 
     private fun onClickTimerToggleButton() {
