@@ -4,7 +4,7 @@ import com.lgtm.simple_timer.page.timer.dialtimer.DefaultProgressBarConfig
 import com.lgtm.simple_timer.page.timer.dialtimer.ProgressBarConfig
 
 data class TimerUiState(
-    val settingTime: Long = 0L,
+    val restartTime: Long = 0L,
     val remainTime: Long = 0L,
     val progress: Float = 0f,
     val maxProgress: Float = 100f,

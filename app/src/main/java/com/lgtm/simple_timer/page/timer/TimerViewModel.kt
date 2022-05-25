@@ -1,5 +1,6 @@
 package com.lgtm.simple_timer.page.timer
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lgtm.simple_timer.page.timer.dialtimer.CircleDialProgressCalculator
@@ -45,7 +46,8 @@ class TimerViewModel @Inject constructor(
 
                     }
                     is TimerState.Finished -> {
-                        
+                        // 알람 울리기
+                        // 리셋 버튼 보여주기
                     }
                 }
             }
@@ -60,8 +62,8 @@ class TimerViewModel @Inject constructor(
             is TimerEvent.ClickStartOrPause -> {
                 onClickTimerToggleButton()
             }
-            is TimerEvent.ClickReset -> {
-
+            is TimerEvent.ClickRestart -> {
+                onClickTimerRestartButton()
             }
         }
     }
@@ -89,23 +91,54 @@ class TimerViewModel @Inject constructor(
             angle = angle,
         )
 
-        timer.configure(startTime = uiState.value.remainTime)
+        timer.configure(startTime = _uiState.value.remainTime)
+        Log.d("Doran7","uiState : ${_uiState.value}")
     }
 
     private fun onClickTimerToggleButton() {
         if (_uiState.value.state == TimerState.Running) {
-            viewModelScope.launch {
-                timer.pause()
-            }
+            pauseTimer()
         } else {
-            viewModelScope.launch {
-                timer.remainTimeFlow()
-                    .onEach { onTick(it) }
-                    .collect()
-            }
-            viewModelScope.launch {
-                timer.start()
-            }
+            _uiState.value = _uiState.value.copy(
+                restartTime = _uiState.value.remainTime
+            )
+            Log.d("Doran6","uiState : ${_uiState.value}")
+
+            startTimer()
+        }
+    }
+
+    private fun onClickTimerRestartButton() {
+        val initialTime = _uiState.value.restartTime
+        val initProgress = circleDialProgressCalculator.calculateRemainStepOfRemainTime(initialTime).toFloat()
+        val initAngle = ceil(360f / progressTimerConfig.maxProgressStep * initProgress.toInt())
+
+        _uiState.value = _uiState.value.copy(
+            remainTime = initialTime,
+            progress = initProgress,
+            angle = initAngle
+        )
+        Log.d("Doran5","uiState : ${_uiState.value}")
+        timer.configure(startTime = initialTime)
+
+        startTimer()
+    }
+
+    private fun startTimer() {
+        viewModelScope.launch {
+            timer.remainTimeFlow()
+                .onEach { onTick(it) }
+                .collect()
+        }
+
+        viewModelScope.launch {
+            timer.start()
+        }
+    }
+
+    private fun pauseTimer() {
+        viewModelScope.launch {
+            timer.pause()
         }
     }
 
@@ -118,6 +151,8 @@ class TimerViewModel @Inject constructor(
             progress = circleDialProgressCalculator.calculateRemainStepOfRemainTime(remainTime).toFloat(),
             angle = prevAngle - prevAngle / prevRemainTime
         )
+
+        Log.d("Doran4","uiState : ${_uiState.value}")
     }
 
 }

@@ -5,7 +5,7 @@ sealed class TimerEvent {
         val dialTouchInfo: DialTouchInfo,
     ) : TimerEvent()
     object ClickStartOrPause : TimerEvent()
-    object ClickReset : TimerEvent()
+    object ClickRestart : TimerEvent()
 }
 
 data class DialTouchInfo(

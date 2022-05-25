@@ -7,9 +7,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.graphics.RectF
 import androidx.core.content.ContextCompat
-import com.lgtm.simple_timer.R
 import com.lgtm.simple_timer.page.timer.DialTouchInfo
-import kotlin.math.ceil
 
 class CircleProgressBarTimerView @JvmOverloads constructor(
     context: Context,
@@ -18,19 +16,11 @@ class CircleProgressBarTimerView @JvmOverloads constructor(
     private val progressBarConfig: ProgressBarConfig = DefaultProgressBarConfig()
 ) : View(context, attrs, defStyleInt), ProgressBarConfig by progressBarConfig {
 
-    // var remainTime: Long = 0
-
     private var progressStep: Int = 0
 
     private val rect = RectF()
 
-    private val rect2 = RectF()
-
     private var angle: Float = 0f
-//        get() {
-//            val gaugeTick = progressStep
-//            return ceil(360f / progressBarConfig.maxProgressStep * gaugeTick)
-//        }
 
     private val progressPaint = Paint().apply {
         isAntiAlias = true
@@ -45,13 +35,6 @@ class CircleProgressBarTimerView @JvmOverloads constructor(
         color = ContextCompat.getColor(context, progressBarConfig.backgroundProgressBarColor)
         strokeWidth = progressBarConfig.backgroundProgressBarWidth
     }
-
-//    private val remainTimePaint = Paint().apply {
-//        color = Color.LTGRAY
-//        textAlign = Paint.Align.CENTER
-//        textSize = 120f
-//        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-//    }
 
     private var timerTouchListener: TimerTouchListener? = null
     fun setTimerTouchListener(listener: TimerTouchListener) {

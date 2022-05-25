@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -71,6 +72,10 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
         remainTimeView.setOnClickListener {
             viewModel.onEvent(TimerEvent.ClickStartOrPause)
         }
+
+        restartButton.setOnClickListener {
+            viewModel.onEvent(TimerEvent.ClickRestart)
+        }
     }
 
     private fun observeViewModel() {
@@ -88,25 +93,42 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
                 viewModel.uiState.distinctUntilChanged { old, new ->
                     old.state == new.state
                 }.collect { uiState ->
-                    Log.d("Doran", "${uiState.state} ${uiState.remainTime}")
-                    controlAlarmManager(uiState.state, uiState.remainTime)
+                    when (uiState.state) {
+                        is TimerState.Running -> {
+                            Log.d("Doran1","uiState : ${uiState}")
+                            showRunningUi(uiState.remainTime)
+                            setAlarm(uiState.remainTime)
+                        }
+                        is TimerState.Paused -> {
+                            cancelAlarm()
+                        }
+                        is TimerState.Finished -> {
+                            Log.d("Doran3","uiState : ${uiState}")
+                            showFinishedUi(uiState.restartTime)
+                        }
+                    }
                 }
             }
         }
     }
 
-   private fun moveToSetting() {
+    private fun moveToSetting() {
         findNavController().navigate(TimerFragmentDirections.actionCompassFragmentToMapFragment())
     }
 
-    private fun controlAlarmManager(timerState: TimerState, remainTime: Long) {
-        if (timerState is TimerState.Running) {
-            setAlarm(remainTime)
-        }
+    private fun showRunningUi(remainTime: Long) = with(binding) {
+        restartButton.isVisible = false
 
-        if (timerState is TimerState.Paused) {
-            cancelAlarm()
-        }
+        remainTimeView.isVisible = true
+//        remainTimeView.text = remainTime.toTimerFormat()
+//        progressBarTimer.
+    }
+
+    private fun showFinishedUi(settingTime: Long) = with(binding) {
+        remainTimeView.isVisible = false
+
+        restartButton.isVisible = true
+        restartButton.text = settingTime.toTimerFormat()
     }
 
     private fun setAlarm(remainTime: Long) {
