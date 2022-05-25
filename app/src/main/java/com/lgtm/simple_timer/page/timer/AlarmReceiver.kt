@@ -6,15 +6,37 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.lgtm.simple_timer.R
+import android.media.AudioManager
+
+import android.media.RingtoneManager
+
+import android.media.MediaPlayer
+import android.net.Uri
+import java.io.IOException
+
 
 class AlarmReceiver: BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         createNotificationChannel(context)
         notifyNotification(context)
+
+        val mPlayer = MediaPlayer()
+        val alert: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+        try {
+            mPlayer.setDataSource(context, alert)
+            mPlayer.setAudioStreamType(AudioManager.STREAM_RING)
+            mPlayer.isLooping = false // 반복여부 지정
+            mPlayer.prepare() // 실행전 준비
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+
+        mPlayer.start() // 실행 시작
     }
 
     private fun createNotificationChannel(context: Context) {

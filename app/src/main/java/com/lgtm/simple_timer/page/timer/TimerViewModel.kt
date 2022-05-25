@@ -1,11 +1,12 @@
 package com.lgtm.simple_timer.page.timer
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lgtm.simple_timer.widget.DefaultProgressBarConfig
+import com.lgtm.simple_timer.page.timer.dialtimer.CircleDialProgressCalculator
+import com.lgtm.simple_timer.page.timer.dialtimer.ProgressBarConfig
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlin.math.ceil
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,34 +15,25 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class TimerViewModel @Inject constructor() : ViewModel() {
+class TimerViewModel @Inject constructor(
+    private val timer: Timer,
+    private val progressTimerConfig: ProgressBarConfig,
+    private val circleDialProgressCalculator: CircleDialProgressCalculator,
+) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(TimerUiState())
+    private val _uiState = MutableStateFlow(TimerUiState(dialProgressConfiguration = progressTimerConfig))
     val uiState: StateFlow<TimerUiState> = _uiState.asStateFlow()
-
-    lateinit var timer : Timer
-    lateinit var dialProgressCalculator: DialProgressCalculator
 
     init {
         initTimer()
-        initDialProgressCalculator()
-    }
-
-    private fun initDialProgressCalculator() {
-        val config = DefaultProgressBarConfig()
-        val calculator = TouchDirectionCalculator()
-        val dialTouchInfoProcessor = DialTouchInfoProcessor(config.dialTickInfo, calculator)
-
-        dialProgressCalculator = DialProgressCalculator(dialTouchInfoProcessor)
     }
 
     private fun initTimer() {
-        timer = Timer(startTime = 10_000L, period = 1_000L, scope = viewModelScope)
+        timer.scope = viewModelScope
 
         viewModelScope.launch {
             timer.statusFlow.collect { timerState ->
                 _uiState.value = _uiState.value.copy(state = timerState)
-
                 when(timerState) {
                     is TimerState.Init -> {
 
@@ -53,7 +45,7 @@ class TimerViewModel @Inject constructor() : ViewModel() {
 
                     }
                     is TimerState.Finished -> {
-
+                        
                     }
                 }
             }
@@ -63,9 +55,6 @@ class TimerViewModel @Inject constructor() : ViewModel() {
     fun onEvent(event: TimerEvent) {
         when (event) {
             is TimerEvent.TouchDial -> {
-                // timer.configure(startTime = event.dialTouchInfo)
-                //_uiState.value = _uiState.value.copy(remainTime = event.dialTouchInfo)
-                // 터치 이벤트 계산해서 progress, remainTime을 계산
                 onDialTouched(event.dialTouchInfo)
             }
             is TimerEvent.ClickStartOrPause -> {
@@ -77,15 +66,30 @@ class TimerViewModel @Inject constructor() : ViewModel() {
         }
     }
 
-    // remainTime 데이터의 소스는 타이머로부터 갖고오는게 가장 좋을 것 같다.
     private fun onDialTouched(dialTouchInfo: DialTouchInfo) {
-        // 계산기는 터치된 정보를 바탕으로, 어느방향으로 얼만큼 이동해야 하는지를 계산하고 리턴.
+        if (_uiState.value.state == TimerState.Running) {
+            return
+        }
 
-        val progressChange = dialProgressCalculator.calculateProgressByTouch(dialTouchInfo)
+        val progressChange = circleDialProgressCalculator.calculateProgressStepByTouch(dialTouchInfo)
+        val updatedProgress = (_uiState.value.progress + progressChange)
+            .coerceAtLeast(0f)
+            .coerceAtMost(progressTimerConfig.dialTickInfo.getTotalTimerTick().toFloat())
+
+        val timeChange = circleDialProgressCalculator.calculateRemainTimeDiff(updatedProgress)
+        val updatedRemainTime = timeChange
+            .coerceAtLeast(0L)
+            .coerceAtMost(progressTimerConfig.dialTickInfo.getMaximumTime())
+
+        val angle = ceil(360f / progressTimerConfig.maxProgressStep * updatedProgress.toInt())
+
         _uiState.value = _uiState.value.copy(
-            remainTime = timer.remainTime,
-            progress = _uiState.value.progress + progressChange.toInt()
+            remainTime = updatedRemainTime,
+            progress = updatedProgress,
+            angle = angle,
         )
+
+        timer.configure(startTime = uiState.value.remainTime)
     }
 
     private fun onClickTimerToggleButton() {
@@ -93,20 +97,27 @@ class TimerViewModel @Inject constructor() : ViewModel() {
             viewModelScope.launch {
                 timer.pause()
             }
-        }
-        else {
+        } else {
             viewModelScope.launch {
                 timer.remainTimeFlow()
-                    .onEach {
-                        Log.d("Doran", "remainTimeFlow : $it")
-                        _uiState.value = _uiState.value.copy(remainTime = it)
-                    }
+                    .onEach { onTick(it) }
                     .collect()
             }
             viewModelScope.launch {
                 timer.start()
             }
         }
+    }
+
+    private fun onTick(remainTime: Long) {
+        val prevAngle = _uiState.value.angle
+        val prevRemainTime = _uiState.value.remainTime / 1_000
+
+        _uiState.value = _uiState.value.copy(
+            remainTime = remainTime,
+            progress = circleDialProgressCalculator.calculateRemainStepOfRemainTime(remainTime).toFloat(),
+            angle = prevAngle - prevAngle / prevRemainTime
+        )
     }
 
 }

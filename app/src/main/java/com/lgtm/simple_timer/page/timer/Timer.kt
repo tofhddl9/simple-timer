@@ -14,9 +14,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class Timer(
-    private var startTime: Long = 30_000,
+    private var startTime: Long = 0L,
     private var period: Long = 1_000,
-    private val scope: CoroutineScope = CoroutineScope(Job()),
+    var scope: CoroutineScope = CoroutineScope(Job()),
 ) {
 
     private val operationChannel = Channel<Operation>(Channel.UNLIMITED)
@@ -65,7 +65,7 @@ class Timer(
             _remainTime -= delay
             operationChannel.send(Operation.EMIT)
         }
-        _remainTime = remainTime.coerceAtLeast(0)
+        _remainTime = _remainTime.coerceAtLeast(0)
         operationChannel.send(Operation.FINISH)
     }
 
@@ -82,13 +82,14 @@ class Timer(
     }
 
     fun configure(startTime: Long? = null, period: Long? = null) {
-        // if (_statusFlow.value == TimerState.Init)
-        startTime?.let {
-            this.startTime = it
-            this._remainTime = it
-        }
-        period?.let {
-            this.period = it
+        if (_statusFlow.value != TimerState.Running) {
+            startTime?.let {
+                this.startTime = it
+                this._remainTime = it
+            }
+            period?.let {
+                this.period = it
+            }
         }
     }
 }

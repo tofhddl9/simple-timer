@@ -60,7 +60,6 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
     }
 
     private fun initProgressBar() = with(binding) {
-        progressBarTimer.remainTime
         progressBarTimer.setTimerTouchListener(::onDialTouched)
     }
 
@@ -69,7 +68,7 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
     }
 
     private fun setListeners() = with(binding) {
-        toggleButton.setOnClickListener {
+        remainTimeView.setOnClickListener {
             viewModel.onEvent(TimerEvent.ClickStartOrPause)
         }
     }
@@ -78,10 +77,8 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { uiState ->
-                    // 실제로는 TimerView에 uiState.remainTime 넘겨주기
-                    binding.textView.text = uiState.remainTime.toString()
-                    binding.progressBarTimer.progressStep = uiState.progress
-                    // binding.progressBarTimer.remainTime = uiState.remainTime
+                    binding.remainTimeView.text = uiState.remainTime.toTimerFormat()
+                    binding.progressBarTimer.updateTimer(uiState.angle, uiState.progress.toInt())
                 }
             }
         }
@@ -91,6 +88,7 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
                 viewModel.uiState.distinctUntilChanged { old, new ->
                     old.state == new.state
                 }.collect { uiState ->
+                    Log.d("Doran", "${uiState.state} ${uiState.remainTime}")
                     controlAlarmManager(uiState.state, uiState.remainTime)
                 }
             }
@@ -103,35 +101,39 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
 
     private fun controlAlarmManager(timerState: TimerState, remainTime: Long) {
         if (timerState is TimerState.Running) {
-            val context = requireContext()
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val intent = Intent(context, AlarmReceiver::class.java)
-            val pendingIntent = PendingIntent.getBroadcast(context, 100, intent, PendingIntent.FLAG_UPDATE_CURRENT)
-
-            Log.d("Doran", "$remainTime")
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                Calendar.getInstance().timeInMillis + remainTime,
-                pendingIntent
-            )
+            setAlarm(remainTime)
         }
 
         if (timerState is TimerState.Paused) {
-            val intent = Intent(context, AlarmReceiver::class.java)
-            val pendingIntent = PendingIntent.getBroadcast(requireContext(), 100, intent, PendingIntent.FLAG_NO_CREATE)
-            pendingIntent.cancel()
+            cancelAlarm()
         }
+    }
+
+    private fun setAlarm(remainTime: Long) {
+        val context = requireContext()
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, AlarmReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(context, 100, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            Calendar.getInstance().timeInMillis + remainTime,
+            pendingIntent
+        )
+    }
+
+    private fun cancelAlarm() {
+        val intent = Intent(context, AlarmReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(requireContext(), 100, intent, PendingIntent.FLAG_NO_CREATE)
+        pendingIntent?.cancel()
     }
 
 }
 
-// 1시간 = 60분 = 3600초 ... 360도
-// 중심을 원점으로하는 좌표평면으로 생각하면, 사분면마다 터치의 x,y 방향에 대해 프로그레스 진행 방향은 결정적.
-// |dx|+|dy|의 단위에 따라 시간을 늘리거나 줄이면 되는데, 현재 시각에따라 몇 틱씩 늘리거나 줄일지를 결정하자.
-//   ex. 초단위로 볼떄, 1000 이하면 단위는 30, 500이하면 10, 60이하면 1 이런식...
-// 프로그레스바의 상태를 잘 정의해보자.
+private fun Long.toTimerFormat(): String {
+    val remainSec = this / 1_000L
+    val minute = remainSec / 60
+    val sec = remainSec % 60
 
-// M0 : 일단은 토글, 리셋 버튼만 있는 5초짜리 틱계산기 만들기
-//    - AlarmManager 만들기
-// M1 : 프로그레스바 붙이기
-//    - 뷰 스펙부터 잘 짜고 코드 작업 시작하자.
+    return "${minute.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}"
+}

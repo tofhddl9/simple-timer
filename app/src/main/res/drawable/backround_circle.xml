@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:color="#e38c12"
+    tools:targetApi="lollipop"> <!-- ripple effect color -->
+    <item android:id="@android:id/background">
+        <shape android:shape="oval">
+            <corners android:radius="4dp"/>
+            <size android:width= "32dp"
+                android:height="32dp"/>
+            <solid android:color="@color/black" /> <!-- background color -->
+        </shape>
+    </item>
+</ripple>
