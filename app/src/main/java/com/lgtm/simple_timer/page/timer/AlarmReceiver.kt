@@ -25,18 +25,18 @@ class AlarmReceiver: BroadcastReceiver() {
         createNotificationChannel(context)
         notifyNotification(context)
 
-        val mPlayer = MediaPlayer()
-        val alert: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-        try {
-            mPlayer.setDataSource(context, alert)
-            mPlayer.setAudioStreamType(AudioManager.STREAM_RING)
-            mPlayer.isLooping = false // 반복여부 지정
-            mPlayer.prepare() // 실행전 준비
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-
-        mPlayer.start() // 실행 시작
+//        val mPlayer = MediaPlayer()
+//        val alert: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+//        try {
+//            mPlayer.setDataSource(context, alert)
+//            mPlayer.setAudioStreamType(AudioManager.STREAM_RING)
+//            mPlayer.isLooping = false // 반복여부 지정
+//            mPlayer.prepare() // 실행전 준비
+//        } catch (e: IOException) {
+//            e.printStackTrace()
+//        }
+//
+//        mPlayer.start() // 실행 시작
     }
 
     private fun createNotificationChannel(context: Context) {
@@ -57,6 +57,7 @@ class AlarmReceiver: BroadcastReceiver() {
             .setContentText("설정한 시간이 되었습니다.")
             .setSmallIcon(R.drawable.ic_baseline_settings_24)
             .setPriority(NotificationManagerCompat.IMPORTANCE_HIGH)
+            .setSilent(true)
 
         notify(NOTIFICATION_ID, build.build())
     }

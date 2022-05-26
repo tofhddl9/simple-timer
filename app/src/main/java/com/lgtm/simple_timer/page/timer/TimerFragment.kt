@@ -4,8 +4,15 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.icu.lang.UCharacter.GraphemeClusterBreak.L
+import android.media.AudioManager
+import android.media.MediaPlayer
+import android.media.Ringtone
+import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.VibrationEffect
+import android.util.Log
 import android.view.View
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -17,6 +24,7 @@ import androidx.navigation.fragment.findNavController
 import com.lgtm.simple_timer.R
 import com.lgtm.simple_timer.databinding.FragmentTimerBinding
 import com.lgtm.simple_timer.delegate.viewBinding
+import com.lgtm.simple_timer.page.setting.SettingSharedPreference
 import com.lgtm.simple_timer.utils.showSnackBar
 import com.lgtm.simple_timer.utils.vibrator
 import dagger.hilt.android.AndroidEntryPoint
@@ -30,7 +38,11 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
 
     private val binding: FragmentTimerBinding by viewBinding(FragmentTimerBinding::bind)
 
-    private val viewModel : TimerViewModel by viewModels()
+    private val viewModel: TimerViewModel by viewModels()
+
+    private val settingSharedPreferences by lazy { SettingSharedPreference(requireContext()) }
+
+    private val mediaPlayer = MediaPlayer()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -142,20 +154,35 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
     }
 
     private fun startRingAndVibrate() {
-        if (true) {
-            // ring
+        if (settingSharedPreferences.doesRing) {
+            val ringtoneUri = Uri.parse(settingSharedPreferences.ringtone) ?:
+                RingtoneManager.getActualDefaultRingtoneUri(requireContext(), RingtoneManager.TYPE_RINGTONE)
+
+            try {
+                mediaPlayer.apply {
+                    setDataSource(requireContext(), ringtoneUri)
+                    setAudioStreamType(AudioManager.STREAM_RING)
+                    isLooping = settingSharedPreferences.doesRingInfinitely
+                    prepare()
+                }.also {
+                    it.start()
+                }
+            } catch (e: Exception) {
+
+            }
         }
-        if (true) {
+
+        if (settingSharedPreferences.doesVibrate) {
             val pattern = longArrayOf(400, 500)
             requireContext().vibrator.vibrate(pattern, 0)
         }
     }
 
     private fun stopRingAndVibrate() {
-        if (true) {
-            // ring
-        }
-        if (true) {
+        mediaPlayer.stop()
+        mediaPlayer.reset()
+
+        if (settingSharedPreferences.doesVibrate) {
             requireContext().vibrator.cancel()
         }
     }
