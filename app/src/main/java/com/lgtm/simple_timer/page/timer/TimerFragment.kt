@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.VibrationEffect
 import android.view.View
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -17,6 +18,7 @@ import com.lgtm.simple_timer.R
 import com.lgtm.simple_timer.databinding.FragmentTimerBinding
 import com.lgtm.simple_timer.delegate.viewBinding
 import com.lgtm.simple_timer.utils.showSnackBar
+import com.lgtm.simple_timer.utils.vibrator
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.*
 import kotlinx.coroutines.flow.collect
@@ -99,14 +101,13 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
                 }.collect { uiState ->
                     when (uiState.state) {
                         is TimerState.Running -> {
-                            showRunningUi()
-                            setAlarm(uiState.remainTime)
+                            onTimerRunning(uiState.remainTime)
                         }
                         is TimerState.Paused -> {
-                            cancelAlarm()
+                            onTimerPaused()
                         }
                         is TimerState.Finished -> {
-                            showFinishedUi(uiState.restartTime)
+                            onTimerFinished(uiState.restartTime)
                         }
                     }
                 }
@@ -122,6 +123,43 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
         }
 
     }
+
+    private fun onTimerRunning(remainTime: Long) {
+        showRunningUi()
+        setAlarm(remainTime)
+
+        stopRingAndVibrate()
+    }
+
+    private fun onTimerPaused() {
+        cancelAlarm()
+    }
+
+    private fun onTimerFinished(restartTime: Long) {
+        showFinishedUi(restartTime)
+
+        startRingAndVibrate()
+    }
+
+    private fun startRingAndVibrate() {
+        if (true) {
+            // ring
+        }
+        if (true) {
+            val pattern = longArrayOf(400, 500)
+            requireContext().vibrator.vibrate(pattern, 0)
+        }
+    }
+
+    private fun stopRingAndVibrate() {
+        if (true) {
+            // ring
+        }
+        if (true) {
+            requireContext().vibrator.cancel()
+        }
+    }
+
 
     private fun moveToSetting() {
         findNavController().navigate(TimerFragmentDirections.actionCompassFragmentToMapFragment())

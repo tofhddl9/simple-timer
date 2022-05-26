@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.lgtm.simple_timer" >
 
+    <uses-permission android:name = "android.permission.VIBRATE" />
+
     <application
         android:name="com.lgtm.simple_timer.MyApplication"
         android:allowBackup="true"
