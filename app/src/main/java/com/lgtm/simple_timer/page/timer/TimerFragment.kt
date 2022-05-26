@@ -5,7 +5,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -17,6 +16,7 @@ import androidx.navigation.fragment.findNavController
 import com.lgtm.simple_timer.R
 import com.lgtm.simple_timer.databinding.FragmentTimerBinding
 import com.lgtm.simple_timer.delegate.viewBinding
+import com.lgtm.simple_timer.utils.showSnackBar
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.*
 import kotlinx.coroutines.flow.collect
@@ -51,6 +51,10 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
             when (it.itemId) {
                 R.id.menu_setting -> {
                     moveToSetting()
+                    return@setOnMenuItemClickListener true
+                }
+                R.id.menu_restart -> {
+                    viewModel.onEvent(TimerEvent.ClickRestart)
                     return@setOnMenuItemClickListener true
                 }
                 else -> {
@@ -95,37 +99,44 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
                 }.collect { uiState ->
                     when (uiState.state) {
                         is TimerState.Running -> {
-                            Log.d("Doran1","uiState : ${uiState}")
-                            showRunningUi(uiState.remainTime)
+                            showRunningUi()
                             setAlarm(uiState.remainTime)
                         }
                         is TimerState.Paused -> {
                             cancelAlarm()
                         }
                         is TimerState.Finished -> {
-                            Log.d("Doran3","uiState : ${uiState}")
                             showFinishedUi(uiState.restartTime)
                         }
                     }
                 }
             }
         }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.errorMessageFlow.collect { errorMsg ->
+                    showSnackBar(errorMsg.asString(requireContext()))
+                }
+            }
+        }
+
     }
 
     private fun moveToSetting() {
         findNavController().navigate(TimerFragmentDirections.actionCompassFragmentToMapFragment())
     }
 
-    private fun showRunningUi(remainTime: Long) = with(binding) {
+    private fun showRunningUi() = with(binding) {
         restartButton.isVisible = false
 
         remainTimeView.isVisible = true
-//        remainTimeView.text = remainTime.toTimerFormat()
-//        progressBarTimer.
+        progressBarTimer.isVisible = true
     }
 
     private fun showFinishedUi(settingTime: Long) = with(binding) {
         remainTimeView.isVisible = false
+        progressBarTimer.isVisible = false
 
         restartButton.isVisible = true
         restartButton.text = settingTime.toTimerFormat()

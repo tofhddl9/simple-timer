@@ -3,16 +3,20 @@ package com.lgtm.simple_timer.page.timer
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lgtm.simple_timer.R
+import com.lgtm.simple_timer.data.UiText
 import com.lgtm.simple_timer.page.timer.dialtimer.CircleDialProgressCalculator
 import com.lgtm.simple_timer.page.timer.dialtimer.ProgressBarConfig
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlin.math.ceil
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -25,6 +29,9 @@ class TimerViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(TimerUiState(dialProgressConfiguration = progressTimerConfig))
     val uiState: StateFlow<TimerUiState> = _uiState.asStateFlow()
 
+    private val errorMessageChannel = Channel<UiText>()
+    val errorMessageFlow = errorMessageChannel.receiveAsFlow()
+
     init {
         initTimer()
     }
@@ -35,21 +42,6 @@ class TimerViewModel @Inject constructor(
         viewModelScope.launch {
             timer.statusFlow.collect { timerState ->
                 _uiState.value = _uiState.value.copy(state = timerState)
-                when(timerState) {
-                    is TimerState.Init -> {
-
-                    }
-                    is TimerState.Paused -> {
-
-                    }
-                    is TimerState.Running -> {
-
-                    }
-                    is TimerState.Finished -> {
-                        // 알람 울리기
-                        // 리셋 버튼 보여주기
-                    }
-                }
             }
         }
     }
@@ -92,34 +84,47 @@ class TimerViewModel @Inject constructor(
         )
 
         timer.configure(startTime = _uiState.value.remainTime)
-        Log.d("Doran7","uiState : ${_uiState.value}")
     }
 
     private fun onClickTimerToggleButton() {
+        if (_uiState.value.remainTime == 0L) {
+            viewModelScope.launch {
+                errorMessageChannel.send(
+                    UiText.StringResource(
+                        resId = R.string.error_message_no_remain_time,
+                        0
+                    )
+                )
+            }
+            return
+        }
+
         if (_uiState.value.state == TimerState.Running) {
             pauseTimer()
         } else {
             _uiState.value = _uiState.value.copy(
                 restartTime = _uiState.value.remainTime
             )
-            Log.d("Doran6","uiState : ${_uiState.value}")
 
             startTimer()
         }
     }
 
     private fun onClickTimerRestartButton() {
+        viewModelScope.launch {
+            timer.reset()
+        }
+
         val initialTime = _uiState.value.restartTime
         val initProgress = circleDialProgressCalculator.calculateRemainStepOfRemainTime(initialTime).toFloat()
         val initAngle = ceil(360f / progressTimerConfig.maxProgressStep * initProgress.toInt())
+        timer.configure(startTime = initialTime)
 
         _uiState.value = _uiState.value.copy(
             remainTime = initialTime,
             progress = initProgress,
-            angle = initAngle
+            angle = initAngle,
         )
-        Log.d("Doran5","uiState : ${_uiState.value}")
-        timer.configure(startTime = initialTime)
 
         startTimer()
     }

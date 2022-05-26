@@ -82,7 +82,7 @@ class Timer(
     }
 
     fun configure(startTime: Long? = null, period: Long? = null) {
-        if (_statusFlow.value != TimerState.Running) {
+        //if (_statusFlow.value != TimerState.Running) {
             startTime?.let {
                 this.startTime = it
                 this._remainTime = it
@@ -90,7 +90,7 @@ class Timer(
             period?.let {
                 this.period = it
             }
-        }
+        //}
     }
 }
 
