@@ -1,6 +1,6 @@
 package com.lgtm.simple_timer.page.timer.dialtimer
 
-import com.lgtm.simple_timer.page.timer.DialTouchInfo
+import com.lgtm.simple_timer.page.timer.data.DialTouchInfo
 import com.lgtm.simple_timer.utils.toMs
 import kotlin.math.absoluteValue
 import kotlin.math.ceil

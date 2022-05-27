@@ -1,5 +1,6 @@
 package com.lgtm.simple_timer.page.timer
 
+import com.lgtm.simple_timer.page.timer.data.TimerState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -24,7 +25,6 @@ class Timer(
     private var job: Job? = null
 
     private var _remainTime = startTime
-    val remainTime = _remainTime
 
     // 이렇게 하거나 onStart, onPause 등을 제공하던가
     private val _statusFlow = MutableStateFlow<TimerState>(TimerState.Init)
@@ -82,15 +82,13 @@ class Timer(
     }
 
     fun configure(startTime: Long? = null, period: Long? = null) {
-        //if (_statusFlow.value != TimerState.Running) {
-            startTime?.let {
-                this.startTime = it
-                this._remainTime = it
-            }
-            period?.let {
-                this.period = it
-            }
-        //}
+        startTime?.let {
+            this.startTime = it
+            this._remainTime = it
+        }
+        period?.let {
+            this.period = it
+        }
     }
 }
 

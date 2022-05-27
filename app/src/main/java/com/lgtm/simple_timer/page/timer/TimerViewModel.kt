@@ -1,11 +1,14 @@
 package com.lgtm.simple_timer.page.timer
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lgtm.simple_timer.R
 import com.lgtm.simple_timer.data.UiText
 import com.lgtm.simple_timer.data.source.TimerRepository
+import com.lgtm.simple_timer.page.timer.data.DialTouchInfo
+import com.lgtm.simple_timer.page.timer.data.TimerEvent
+import com.lgtm.simple_timer.page.timer.data.TimerState
+import com.lgtm.simple_timer.page.timer.data.TimerUiState
 import com.lgtm.simple_timer.page.timer.dialtimer.CircleDialProgressCalculator
 import com.lgtm.simple_timer.page.timer.dialtimer.ProgressBarConfig
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,6 +37,9 @@ class TimerViewModel @Inject constructor(
     private val errorMessageChannel = Channel<UiText>()
     val errorMessageFlow = errorMessageChannel.receiveAsFlow()
 
+    private val showTouchGuideChannel = Channel<Unit>()
+    val showTouchGuideFlow = showTouchGuideChannel.receiveAsFlow()
+
     init {
         initTimer()
     }
@@ -47,17 +53,25 @@ class TimerViewModel @Inject constructor(
             }
         }
 
-        timerRepository.getStoredTimer()?.let { prevTimer ->
-            _uiState.value = _uiState.value.copy(
-                restartTime = prevTimer.restartTime,
-                remainTime = prevTimer.remainTime,
-                state = prevTimer.state,
-                angle = prevTimer.angle
-            )
-            timer.configure(startTime = prevTimer.remainTime)
+        viewModelScope.launch {
+            timerRepository.getStoredTimer()?.let { prevTimer ->
+                timer.configure(startTime = prevTimer.remainTime)
+                _uiState.value = _uiState.value.copy(
+                    restartTime = prevTimer.restartTime,
+                    remainTime = prevTimer.remainTime,
+                    state = prevTimer.state,
+                    angle = prevTimer.angle
+                )
 
-            if (prevTimer.state == TimerState.Running) {
-                startTimer()
+                if (prevTimer.state == TimerState.Running) {
+                    startTimer()
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            if (_uiState.value.remainTime == 0L && _uiState.value.state != TimerState.Finished) {
+                showTouchGuideChannel.send(Unit)
             }
         }
     }
@@ -172,8 +186,6 @@ class TimerViewModel @Inject constructor(
             progress = circleDialProgressCalculator.calculateRemainStepOfRemainTime(remainTime).toFloat(),
             angle = prevAngle - prevAngle / prevRemainTime
         )
-
-        Log.d("Doran4","uiState : ${_uiState.value}")
     }
 
     override fun onCleared() {

@@ -1,8 +1,8 @@
 package com.lgtm.simple_timer.data.source
 
-import com.lgtm.simple_timer.page.timer.TimerUiState
-import com.lgtm.simple_timer.page.timer.mapToTimerData
-import com.lgtm.simple_timer.page.timer.mapToTimerUiState
+import com.lgtm.simple_timer.page.timer.data.TimerUiState
+import com.lgtm.simple_timer.page.timer.data.mapToTimerData
+import com.lgtm.simple_timer.page.timer.data.mapToTimerUiState
 
 class TimerRepositoryImpl(
     private val localTimerDataSource: TimerDataSource,

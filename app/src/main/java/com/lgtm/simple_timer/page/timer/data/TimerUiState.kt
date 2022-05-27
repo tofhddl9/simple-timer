@@ -1,14 +1,14 @@
-package com.lgtm.simple_timer.page.timer
+package com.lgtm.simple_timer.page.timer.data
 
 import com.lgtm.simple_timer.page.timer.dialtimer.DefaultProgressBarConfig
 import com.lgtm.simple_timer.page.timer.dialtimer.ProgressBarConfig
 
 data class TimerUiState(
-    val restartTime: Long = 10000L,
-    val remainTime: Long = 10000L,
-    val progress: Float = 2f,
+    val restartTime: Long = 0L,
+    val remainTime: Long = 0L,
+    val progress: Float = 0f,
     val maxProgress: Float = 100f,
-    val angle: Float = 20f,
+    val angle: Float = 0f,
     val state: TimerState = TimerState.Init,
     val dialProgressConfiguration: ProgressBarConfig = DefaultProgressBarConfig(),
 )

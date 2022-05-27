@@ -1,4 +1,4 @@
-package com.lgtm.simple_timer.page.timer
+package com.lgtm.simple_timer.page.timer.data
 
 import com.lgtm.simple_timer.data.TimerData
 import java.util.*

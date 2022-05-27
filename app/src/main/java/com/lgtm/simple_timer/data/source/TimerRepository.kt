@@ -1,6 +1,6 @@
 package com.lgtm.simple_timer.data.source
 
-import com.lgtm.simple_timer.page.timer.TimerUiState
+import com.lgtm.simple_timer.page.timer.data.TimerUiState
 
 interface TimerRepository {
     fun getStoredTimer(): TimerUiState?

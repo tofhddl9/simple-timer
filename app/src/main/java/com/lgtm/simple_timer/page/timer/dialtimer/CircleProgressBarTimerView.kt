@@ -7,7 +7,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.graphics.RectF
 import androidx.core.content.ContextCompat
-import com.lgtm.simple_timer.page.timer.DialTouchInfo
+import com.lgtm.simple_timer.page.timer.data.DialTouchInfo
 
 class CircleProgressBarTimerView @JvmOverloads constructor(
     context: Context,

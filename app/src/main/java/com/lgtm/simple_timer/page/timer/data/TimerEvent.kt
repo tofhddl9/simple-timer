@@ -1,4 +1,4 @@
-package com.lgtm.simple_timer.page.timer
+package com.lgtm.simple_timer.page.timer.data
 
 sealed class TimerEvent {
     class TouchDial(

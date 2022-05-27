@@ -1,18 +1,15 @@
 package com.lgtm.simple_timer.page.timer
 
+import android.animation.Animator
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.icu.lang.UCharacter.GraphemeClusterBreak.L
 import android.media.AudioManager
 import android.media.MediaPlayer
-import android.media.Ringtone
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Bundle
-import android.os.VibrationEffect
-import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import androidx.core.view.isVisible
@@ -26,6 +23,9 @@ import com.lgtm.simple_timer.R
 import com.lgtm.simple_timer.databinding.FragmentTimerBinding
 import com.lgtm.simple_timer.delegate.viewBinding
 import com.lgtm.simple_timer.page.setting.SettingSharedPreference
+import com.lgtm.simple_timer.page.timer.data.DialTouchInfo
+import com.lgtm.simple_timer.page.timer.data.TimerEvent
+import com.lgtm.simple_timer.page.timer.data.TimerState
 import com.lgtm.simple_timer.utils.showSnackBar
 import com.lgtm.simple_timer.utils.vibrator
 import dagger.hilt.android.AndroidEntryPoint
@@ -58,6 +58,22 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
     private fun initViews() {
         initToolbar()
         initProgressBar()
+        initTouchGuideView()
+    }
+
+    private fun initTouchGuideView() {
+        binding.touchGuideView.addAnimatorListener(object: Animator.AnimatorListener {
+            override fun onAnimationStart(p0: Animator?) { }
+
+            override fun onAnimationEnd(animator: Animator) {
+                binding.touchGuideView.isVisible = false
+            }
+
+            override fun onAnimationCancel(p0: Animator?) {}
+
+            override fun onAnimationRepeat(p0: Animator?) {}
+
+        })
     }
 
     private fun initToolbar() = with(binding.toolbar) {
@@ -138,6 +154,15 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
             }
         }
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.showTouchGuideFlow.collect {
+                    binding.touchGuideView.isVisible = true
+                    binding.touchGuideView.animate()
+                }
+            }
+        }
+
     }
 
     override fun onResume() {
@@ -168,7 +193,7 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
     }
 
     private fun startRingAndVibrate() {
-        if (settingSharedPreferences.doesRing) {
+        if (!mediaPlayer.isPlaying && settingSharedPreferences.doesRing) {
             var ringtoneUri = RingtoneManager.getActualDefaultRingtoneUri(requireContext(), RingtoneManager.TYPE_RINGTONE)
             settingSharedPreferences.ringtone?.let {
                 ringtoneUri = Uri.parse(it)

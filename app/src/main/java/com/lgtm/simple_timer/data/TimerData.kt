@@ -1,6 +1,6 @@
 package com.lgtm.simple_timer.data
 
-import com.lgtm.simple_timer.page.timer.TimerState
+import com.lgtm.simple_timer.page.timer.data.TimerState
 import java.io.Serializable
 import java.util.*
 
