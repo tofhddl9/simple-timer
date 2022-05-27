@@ -14,6 +14,7 @@ import android.os.Bundle
 import android.os.VibrationEffect
 import android.util.Log
 import android.view.View
+import android.view.WindowManager
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -112,13 +113,16 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
                     old.state == new.state
                 }.collect { uiState ->
                     when (uiState.state) {
-                        is TimerState.Running -> {
+                        TimerState.Init -> {
+
+                        }
+                        TimerState.Running -> {
                             onTimerRunning(uiState.remainTime)
                         }
-                        is TimerState.Paused -> {
+                        TimerState.Paused -> {
                             onTimerPaused()
                         }
-                        is TimerState.Finished -> {
+                        TimerState.Finished -> {
                             onTimerFinished(uiState.restartTime)
                         }
                     }
@@ -134,6 +138,16 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
             }
         }
 
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        if (settingSharedPreferences.doesAlwaysOnDisplay) {
+            requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
     }
 
     private fun onTimerRunning(remainTime: Long) {
@@ -155,20 +169,18 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
 
     private fun startRingAndVibrate() {
         if (settingSharedPreferences.doesRing) {
-            val ringtoneUri = Uri.parse(settingSharedPreferences.ringtone) ?:
-                RingtoneManager.getActualDefaultRingtoneUri(requireContext(), RingtoneManager.TYPE_RINGTONE)
+            var ringtoneUri = RingtoneManager.getActualDefaultRingtoneUri(requireContext(), RingtoneManager.TYPE_RINGTONE)
+            settingSharedPreferences.ringtone?.let {
+                ringtoneUri = Uri.parse(it)
+            }
 
-            try {
-                mediaPlayer.apply {
-                    setDataSource(requireContext(), ringtoneUri)
-                    setAudioStreamType(AudioManager.STREAM_RING)
-                    isLooping = settingSharedPreferences.doesRingInfinitely
-                    prepare()
-                }.also {
-                    it.start()
-                }
-            } catch (e: Exception) {
-
+            mediaPlayer.apply {
+                setDataSource(requireContext(), ringtoneUri)
+                setAudioStreamType(AudioManager.STREAM_RING)
+                isLooping = settingSharedPreferences.doesRingInfinitely
+                prepare()
+            }.also {
+                it.start()
             }
         }
 

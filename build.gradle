@@ -25,6 +25,7 @@ buildscript {
         hiltVersion = '2.41'
         roomVersion = "2.4.2"
         preferenceVersion = "1.2.0"
+        gsonVersion = "2.9.0"
 
         //3rd-party libs
         timberVersion = "5.0.1"

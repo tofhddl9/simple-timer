@@ -5,6 +5,7 @@ import com.lgtm.simple_timer.R
 import com.lgtm.simple_timer.utils.toMs
 
 interface ProgressBarConfig {
+    val maxSettingTime: Long
     val maxProgressStep: Int
     val dialSensitivity: Float
     val progressAnimator: ValueAnimator?
@@ -18,6 +19,7 @@ interface ProgressBarConfig {
 }
 
 class DefaultProgressBarConfig : ProgressBarConfig {
+    override val maxSettingTime: Long = 60 * 60 * 1000
     override val maxProgressStep: Int by lazy { dialTickInfo.getTotalTimerTick() }
     override val dialSensitivity: Float = 0.03f
     override val progressAnimator: ValueAnimator?
@@ -38,7 +40,7 @@ class DefaultProgressBarConfig : ProgressBarConfig {
     override val backgroundProgressBarWidth: Float
         get() = 100f
     override val backgroundProgressBarColor: Int
-        get() = R.color.black
+        get() = R.color.transparent_red
 }
 
 data class DialTickInfo(

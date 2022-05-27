@@ -1,8 +1,11 @@
 package com.lgtm.simple_timer.page.timer
 
-sealed class TimerState {
-    object Init : TimerState()
-    object Running : TimerState()
-    object Paused : TimerState()
-    object Finished : TimerState()
+import com.google.gson.annotations.SerializedName
+import java.io.Serializable
+
+enum class TimerState {
+    Init,
+    Running,
+    Paused,
+    Finished
 }

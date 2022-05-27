@@ -116,24 +116,8 @@ class CircleProgressBarTimerView @JvmOverloads constructor(
         drawArc(rect, -90f, angle, false, progressPaint)
     }
 
-//    private fun Canvas.drawRemainTime() {
-//        val xPos = width / 2f
-//        val yPos = (height / 2f - (remainTimePaint.descent() + remainTimePaint.ascent()) / 2)
-//
-//        val text = remainTime.toTimerFormat()
-//        drawText(text, xPos, yPos, remainTimePaint)
-//    }
-
 }
 
 fun interface TimerTouchListener {
     fun onDialTouched(dialTouchInfo: DialTouchInfo)
 }
-
-//private fun Long.toTimerFormat(): String {
-//    val remainSec = this / 1_000L
-//    val minute = remainSec / 60
-//    val sec = remainSec % 60
-//
-//    return "${minute.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}"
-//}

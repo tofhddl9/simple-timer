@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lgtm.simple_timer.R
 import com.lgtm.simple_timer.data.UiText
+import com.lgtm.simple_timer.data.source.TimerRepository
 import com.lgtm.simple_timer.page.timer.dialtimer.CircleDialProgressCalculator
 import com.lgtm.simple_timer.page.timer.dialtimer.ProgressBarConfig
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,6 +25,7 @@ class TimerViewModel @Inject constructor(
     private val timer: Timer,
     private val progressTimerConfig: ProgressBarConfig,
     private val circleDialProgressCalculator: CircleDialProgressCalculator,
+    private val timerRepository: TimerRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TimerUiState(dialProgressConfiguration = progressTimerConfig))
@@ -42,6 +44,20 @@ class TimerViewModel @Inject constructor(
         viewModelScope.launch {
             timer.statusFlow.collect { timerState ->
                 _uiState.value = _uiState.value.copy(state = timerState)
+            }
+        }
+
+        timerRepository.getStoredTimer()?.let { prevTimer ->
+            _uiState.value = _uiState.value.copy(
+                restartTime = prevTimer.restartTime,
+                remainTime = prevTimer.remainTime,
+                state = prevTimer.state,
+                angle = prevTimer.angle
+            )
+            timer.configure(startTime = prevTimer.remainTime)
+
+            if (prevTimer.state == TimerState.Running) {
+                startTimer()
             }
         }
     }
@@ -160,4 +176,9 @@ class TimerViewModel @Inject constructor(
         Log.d("Doran4","uiState : ${_uiState.value}")
     }
 
+    override fun onCleared() {
+        timerRepository.storeTimer(_uiState.value)
+
+        super.onCleared()
+    }
 }
