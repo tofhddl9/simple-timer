@@ -29,6 +29,8 @@ import com.lgtm.simple_timer.page.timer.data.TimerState
 import com.lgtm.simple_timer.utils.showSnackBar
 import com.lgtm.simple_timer.utils.vibrator
 import dagger.hilt.android.AndroidEntryPoint
+import java.lang.Exception
+import java.lang.IllegalStateException
 import java.util.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -199,13 +201,17 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
                 ringtoneUri = Uri.parse(it)
             }
 
-            mediaPlayer.apply {
-                setDataSource(requireContext(), ringtoneUri)
-                setAudioStreamType(AudioManager.STREAM_RING)
-                isLooping = settingSharedPreferences.doesRingInfinitely
-                prepare()
-            }.also {
-                it.start()
+            try {
+                mediaPlayer.apply {
+                    setDataSource(requireContext(), ringtoneUri)
+                    setAudioStreamType(AudioManager.STREAM_RING)
+                    isLooping = settingSharedPreferences.doesRingInfinitely
+                    prepare()
+                }.also {
+                    it.start()
+                }
+            } catch (e: IllegalStateException) {
+
             }
         }
 
@@ -261,6 +267,13 @@ class TimerFragment: Fragment(R.layout.fragment_timer) {
         val intent = Intent(context, AlarmReceiver::class.java)
         val pendingIntent = PendingIntent.getBroadcast(requireContext(), 100, intent, PendingIntent.FLAG_NO_CREATE)
         pendingIntent?.cancel()
+    }
+
+    override fun onDestroy() {
+        mediaPlayer.release()
+        requireContext().vibrator.cancel()
+
+        super.onDestroy()
     }
 
 }
